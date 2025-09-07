@@ -12,7 +12,7 @@ interface OrderConfirmationProps {
 }
 
 export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onNewOrder }) => {
-  const { t, isRTL } = useLanguage();
+  const { isRTL } = useLanguage();
   
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4 ${isRTL ? 'rtl' : 'ltr'}`}>
@@ -26,19 +26,28 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onN
               </div>
             </div>
             
-            <h2 className="text-4xl font-bold text-white mb-2">{t('orderConfirmed')}</h2>
-            <p className="text-xl text-gray-300 mb-8">{t('mechanicalMasterpiece')}</p>
+            <h2 className="text-4xl font-bold text-white mb-2">ORDER CONFIRMED</h2>
+            <p className="text-xl text-gray-300 mb-8">Your mechanical masterpiece is being assembled!</p>
             
             <div className="bg-gray-800 rounded-lg p-6 mb-8 border border-gray-600">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-lg font-semibold text-gray-300">{t('orderId')}</span>
+                <span className="text-lg font-semibold text-gray-300">ORDER ID</span>
                 <span className="text-lg font-bold text-blue-400">#{order.id}</span>
               </div>
               
               <div className="flex items-center justify-between mb-4">
-                <span className="text-lg font-semibold text-gray-300">{t('customer')}</span>
+                <span className="text-lg font-semibold text-gray-300">CUSTOMER</span>
                 <span className="text-lg font-bold text-white">{order.customerName}</span>
               </div>
+              
+              {order.orderType && (
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-lg font-semibold text-gray-300">ORDER TYPE</span>
+                  <span className={`text-lg font-bold ${order.orderType === 'delivery' ? 'text-blue-400' : 'text-green-400'}`}>
+                    {order.orderType === 'delivery' ? '🚚 DELIVERY' : '🍽️ DINE IN'}
+                  </span>
+                </div>
+              )}
               
               <div className="space-y-3">
                 {order.items.map((item, index) => (
@@ -62,7 +71,7 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onN
               
               <div className="border-t border-gray-600 mt-4 pt-4">
                 <div className="flex justify-between text-2xl font-bold">
-                  <span className="text-white">{t('total')}</span>
+                  <span className="text-white">TOTAL</span>
                   <span className="text-orange-400">${order.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
@@ -71,18 +80,18 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onN
             <div className="flex items-center justify-center space-x-4 mb-8 p-4 bg-blue-600/20 rounded-lg border border-blue-500/30">
               <Clock className="text-blue-400" size={24} />
               <span className="text-lg font-semibold text-blue-300">
-                {t('estimatedPrepTime')} {order.estimatedTime} {t('minutes')}
+                ESTIMATED PREP TIME: {order.estimatedTime} MINUTES
               </span>
             </div>
 
             <div className="space-y-4">
               <p className="text-gray-300">
-                {t('kitchenReady')}
+                Our kitchen is ready to assemble your order!
               </p>
               
               <MechanicalButton onClick={onNewOrder} size="lg" className="w-full">
                 <Wrench size={20} />
-                <span className="mx-2">{t('orderAnother')}</span>
+                <span className="mx-2">ORDER ANOTHER</span>
                 <Wrench size={20} />
               </MechanicalButton>
             </div>

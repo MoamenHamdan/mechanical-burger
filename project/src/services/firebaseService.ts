@@ -317,6 +317,15 @@ export const ordersService = {
     }
   },
 
+  async delete(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'orders', id));
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw new Error('Failed to delete order');
+    }
+  },
+
   subscribe(callback: (orders: Order[]) => void) {
     return onSnapshot(
       query(collection(db, 'orders'), orderBy('timestamp', 'desc')),

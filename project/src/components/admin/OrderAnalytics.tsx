@@ -1,8 +1,10 @@
-import React from 'react';
-import { TrendingUp, DollarSign, Clock, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { TrendingUp, DollarSign, Clock, Users, Trash2 } from 'lucide-react';
 import { Order } from '../../types';
 import { MechanicalCard } from '../ui/MechanicalCard';
+import { MechanicalButton } from '../ui/MechanicalButton';
 import { useLanguage } from '../../hooks/useLanguage';
+import { ordersService } from '../../services/firebaseService';
 
 interface OrderAnalyticsProps {
   orders: Order[];
@@ -10,6 +12,43 @@ interface OrderAnalyticsProps {
 
 export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
   const { t } = useLanguage();
+  const [lastReset, setLastReset] = useState<Date | null>(null);
+  
+  // Check if it's time to reset (6 AM daily)
+  useEffect(() => {
+    const checkResetTime = () => {
+      const now = new Date();
+      const sixAM = new Date();
+      sixAM.setHours(6, 0, 0, 0);
+      
+      // If it's past 6 AM and we haven't reset today
+      if (now >= sixAM && (!lastReset || lastReset.toDateString() !== now.toDateString())) {
+        handleResetAnalytics();
+      }
+    };
+    
+    checkResetTime();
+    const interval = setInterval(checkResetTime, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [lastReset]);
+  
+  const handleResetAnalytics = async () => {
+    if (!confirm('Reset all analytics data? This will delete all completed orders.')) return;
+    
+    try {
+      // Delete all completed orders
+      const completedOrders = orders.filter(order => order.status === 'completed');
+      for (const order of completedOrders) {
+        await ordersService.delete(order.id);
+      }
+      setLastReset(new Date());
+      alert('Analytics reset successfully!');
+    } catch (error) {
+      console.error('Error resetting analytics:', error);
+      alert('Failed to reset analytics');
+    }
+  };
+  
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
   const completedOrders = orders.filter(order => order.status === 'completed').length;
@@ -23,13 +62,26 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
 
   return (
     <div className="space-y-8">
+      {/* Reset Button */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">ANALYTICS DASHBOARD</h2>
+        <MechanicalButton
+          onClick={handleResetAnalytics}
+          variant="danger"
+          size="sm"
+        >
+          <Trash2 size={16} />
+          <span>RESET ANALYTICS</span>
+        </MechanicalButton>
+      </div>
+      
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MechanicalCard>
           <div className="p-6 text-center">
             <DollarSign size={32} className="text-green-400 mx-auto mb-3" />
             <div className="text-3xl font-bold text-white mb-2">${totalRevenue.toFixed(2)}</div>
-            <div className="text-gray-400">{t('totalRevenue')}</div>
+            <div className="text-gray-400">TOTAL REVENUE</div>
           </div>
         </MechanicalCard>
         
@@ -37,7 +89,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
           <div className="p-6 text-center">
             <TrendingUp size={32} className="text-blue-400 mx-auto mb-3" />
             <div className="text-3xl font-bold text-white mb-2">${averageOrderValue.toFixed(2)}</div>
-            <div className="text-gray-400">{t('avgOrderValue')}</div>
+            <div className="text-gray-400">AVG ORDER VALUE</div>
           </div>
         </MechanicalCard>
         
@@ -45,7 +97,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
           <div className="p-6 text-center">
             <Users size={32} className="text-purple-400 mx-auto mb-3" />
             <div className="text-3xl font-bold text-white mb-2">{completedOrders}</div>
-            <div className="text-gray-400">{t('completedOrders')}</div>
+            <div className="text-gray-400">COMPLETED ORDERS</div>
           </div>
         </MechanicalCard>
         
@@ -53,7 +105,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
           <div className="p-6 text-center">
             <Clock size={32} className="text-orange-400 mx-auto mb-3" />
             <div className="text-3xl font-bold text-white mb-2">{averageWaitTime.toFixed(0)} min</div>
-            <div className="text-gray-400">{t('avgWaitTime')}</div>
+            <div className="text-gray-400">AVG WAIT TIME</div>
           </div>
         </MechanicalCard>
       </div>
@@ -61,18 +113,18 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
       {/* Recent Orders */}
       <MechanicalCard hover={false}>
         <div className="p-6">
-          <h3 className="text-2xl font-bold text-white mb-6">{t('recentOrders')}</h3>
+          <h3 className="text-2xl font-bold text-white mb-6">RECENT ORDERS</h3>
           
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-600">
-                  <th className="text-left py-3 text-gray-400 font-semibold">{t('orderId').toUpperCase()}</th>
-                  <th className="text-left py-3 text-gray-400 font-semibold">{t('customer').toUpperCase()}</th>
-                  <th className="text-left py-3 text-gray-400 font-semibold">{t('items').toUpperCase()}</th>
-                  <th className="text-left py-3 text-gray-400 font-semibold">{t('total').toUpperCase()}</th>
-                  <th className="text-left py-3 text-gray-400 font-semibold">{t('status').toUpperCase()}</th>
-                  <th className="text-left py-3 text-gray-400 font-semibold">{t('time').toUpperCase()}</th>
+                  <th className="text-left py-3 text-gray-400 font-semibold">ORDER ID</th>
+                  <th className="text-left py-3 text-gray-400 font-semibold">CUSTOMER</th>
+                  <th className="text-left py-3 text-gray-400 font-semibold">ITEMS</th>
+                  <th className="text-left py-3 text-gray-400 font-semibold">TOTAL</th>
+                  <th className="text-left py-3 text-gray-400 font-semibold">STATUS</th>
+                  <th className="text-left py-3 text-gray-400 font-semibold">TIME</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,7 +155,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
           
           {orders.length === 0 && (
             <div className="text-center py-12">
-              <div className="text-gray-500 text-lg">{t('noOrdersYet')}</div>
+              <div className="text-gray-500 text-lg">NO ORDERS YET</div>
             </div>
           )}
         </div>

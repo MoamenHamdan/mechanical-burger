@@ -25,6 +25,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   const [selectedCustomizations, setSelectedCustomizations] = useState<CustomizationOption[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [orderType, setOrderType] = useState<'dine-in' | 'delivery'>('dine-in');
 
   // Filter customizations for this burger's category or global ones
   const availableCustomizations = customizations.filter(
@@ -67,7 +68,8 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
         timestamp: new Date(),
         status: 'pending',
         estimatedTime: Math.floor(Math.random() * 15) + 10,
-        comments: comments.trim() || undefined
+        comments: comments.trim() || undefined,
+        orderType: orderType
       };
 
       await ordersService.create(order);
@@ -99,7 +101,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
             </div>
 
             <div className="grid lg:grid-cols-2 gap-8">
-              {/* Burger Preview */}
+              {/* Left Column - Burger Preview & Basic Info */}
               <div className="space-y-6">
                 <div className="relative overflow-hidden rounded-lg">
                   <img 
@@ -110,7 +112,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent"></div>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <h3 className="text-xl font-bold text-white">{burger.name}</h3>
                   <p className="text-gray-300">{burger.description}</p>
                   
@@ -130,7 +132,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                 </div>
               </div>
 
-              {/* Customization Options */}
+              {/* Right Column - Customization Options & Order Details */}
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-400 mb-2">
@@ -143,6 +145,34 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                     placeholder="Enter your name"
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-400 mb-2">
+                    ORDER TYPE:
+                  </label>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setOrderType('dine-in')}
+                      className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
+                        orderType === 'dine-in'
+                          ? 'border-green-500 bg-green-500/20 text-green-300'
+                          : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      🍽️ DINE IN
+                    </button>
+                    <button
+                      onClick={() => setOrderType('delivery')}
+                      className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
+                        orderType === 'delivery'
+                          ? 'border-blue-500 bg-blue-500/20 text-blue-300'
+                          : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
+                      }`}
+                    >
+                      🚚 DELIVERY
+                    </button>
+                  </div>
                 </div>
 
                 <div>

@@ -45,6 +45,7 @@ export interface Order {
   status: 'pending' | 'preparing' | 'ready' | 'completed';
   estimatedTime: number;
   comments?: string;
+  orderType?: 'dine-in' | 'delivery';
 }
 
 export type ViewMode = 'customer' | 'admin';
