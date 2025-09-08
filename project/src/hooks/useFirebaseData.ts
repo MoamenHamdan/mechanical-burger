@@ -13,36 +13,42 @@ export const useFirebaseData = () => {
   useEffect(() => {
     const unsubscribers: (() => void)[] = [];
 
-    try {
-      // Subscribe to categories
-      const unsubscribeCategories = categoriesService.subscribe((data) => {
-        setCategories(data);
-      });
-      unsubscribers.push(unsubscribeCategories);
+    const bootstrap = async () => {
+      try {
+        // Kick off initial fetches in parallel for faster first paint
+        const [initialCategories, initialBurgers, initialCustomizations, initialOrders] = await Promise.all([
+          categoriesService.getAll(),
+          burgersService.getAll(),
+          customizationService.getAll(),
+          ordersService.getAll()
+        ]);
 
-      // Subscribe to burgers
-      const unsubscribeBurgers = burgersService.subscribe((data) => {
-        setBurgers(data);
-      });
-      unsubscribers.push(unsubscribeBurgers);
+        setCategories(initialCategories);
+        setBurgers(initialBurgers);
+        setCustomizations(initialCustomizations);
+        setOrders(initialOrders);
 
-      // Subscribe to customizations
-      const unsubscribeCustomizations = customizationService.subscribe((data) => {
-        setCustomizations(data);
-      });
-      unsubscribers.push(unsubscribeCustomizations);
+        // Then attach real-time listeners
+        const unsubscribeCategories = categoriesService.subscribe((data) => setCategories(data));
+        unsubscribers.push(unsubscribeCategories);
 
-      // Subscribe to orders
-      const unsubscribeOrders = ordersService.subscribe((data) => {
-        setOrders(data);
-      });
-      unsubscribers.push(unsubscribeOrders);
+        const unsubscribeBurgers = burgersService.subscribe((data) => setBurgers(data));
+        unsubscribers.push(unsubscribeBurgers);
 
-      setLoading(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setLoading(false);
-    }
+        const unsubscribeCustomizations = customizationService.subscribe((data) => setCustomizations(data));
+        unsubscribers.push(unsubscribeCustomizations);
+
+        const unsubscribeOrders = ordersService.subscribe((data) => setOrders(data));
+        unsubscribers.push(unsubscribeOrders);
+
+        setLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+        setLoading(false);
+      }
+    };
+
+    bootstrap();
 
     return () => {
       unsubscribers.forEach(unsubscribe => unsubscribe());

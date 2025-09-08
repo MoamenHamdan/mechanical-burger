@@ -3,15 +3,20 @@ import { ViewMode } from './types';
 import { Header } from './components/Header';
 import { CustomerView } from './components/customer/CustomerView';
 import { AdminView } from './components/admin/AdminView';
+import { AdminAuthGate } from './components/admin/AdminAuthGate';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { useFirebaseData } from './hooks/useFirebaseData';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('customer');
+  const [adminAuthed, setAdminAuthed] = useState<boolean>(false);
   const { burgers, categories, customizations, orders, loading, error } = useFirebaseData();
   
   // Secret URL-based admin access: e.g., https://site/#admin-<token>
   useEffect(() => {
+    const sessionAuthed = sessionStorage.getItem('admin_authed') === 'true';
+    if (sessionAuthed) setAdminAuthed(true);
+
     const checkHash = () => {
       const hash = window.location.hash || '';
       const token = import.meta.env.VITE_ADMIN_HASH;
@@ -24,11 +29,7 @@ function App() {
       console.log('- Expected hash:', expectedHash);
       console.log('- Access allowed:', allowed);
       
-      if (allowed) {
-        setCurrentView('admin');
-      } else {
-        setCurrentView('customer');
-      }
+      if (allowed) setCurrentView('admin'); else setCurrentView('customer');
     };
     checkHash();
     window.addEventListener('hashchange', checkHash);
@@ -73,6 +74,11 @@ function App() {
           />
         );
       case 'admin':
+        if (!adminAuthed) {
+          return (
+            <AdminAuthGate onAuthenticated={() => setAdminAuthed(true)} />
+          );
+        }
         return (
           <AdminView
             burgers={burgers}

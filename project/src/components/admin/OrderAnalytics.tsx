@@ -1,10 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { TrendingUp, DollarSign, Clock, Users, Trash2 } from 'lucide-react';
+import React from 'react';
+import { TrendingUp, DollarSign, Clock, Users } from 'lucide-react';
 import { Order } from '../../types';
 import { MechanicalCard } from '../ui/MechanicalCard';
-import { MechanicalButton } from '../ui/MechanicalButton';
 import { useLanguage } from '../../hooks/useLanguage';
-import { ordersService } from '../../services/firebaseService';
 
 interface OrderAnalyticsProps {
   orders: Order[];
@@ -12,42 +10,6 @@ interface OrderAnalyticsProps {
 
 export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
   const { t } = useLanguage();
-  const [lastReset, setLastReset] = useState<Date | null>(null);
-  
-  // Check if it's time to reset (6 AM daily)
-  useEffect(() => {
-    const checkResetTime = () => {
-      const now = new Date();
-      const sixAM = new Date();
-      sixAM.setHours(6, 0, 0, 0);
-      
-      // If it's past 6 AM and we haven't reset today
-      if (now >= sixAM && (!lastReset || lastReset.toDateString() !== now.toDateString())) {
-        handleResetAnalytics();
-      }
-    };
-    
-    checkResetTime();
-    const interval = setInterval(checkResetTime, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, [lastReset]);
-  
-  const handleResetAnalytics = async () => {
-    if (!confirm('Reset all analytics data? This will delete all completed orders.')) return;
-    
-    try {
-      // Delete all completed orders
-      const completedOrders = orders.filter(order => order.status === 'completed');
-      for (const order of completedOrders) {
-        await ordersService.delete(order.id);
-      }
-      setLastReset(new Date());
-      alert('Analytics reset successfully!');
-    } catch (error) {
-      console.error('Error resetting analytics:', error);
-      alert('Failed to reset analytics');
-    }
-  };
   
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
   const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
@@ -62,17 +24,8 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
 
   return (
     <div className="space-y-8">
-      {/* Reset Button */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-white">ANALYTICS DASHBOARD</h2>
-        <MechanicalButton
-          onClick={handleResetAnalytics}
-          variant="danger"
-          size="sm"
-        >
-          <Trash2 size={16} />
-          <span>RESET ANALYTICS</span>
-        </MechanicalButton>
       </div>
       
       {/* Stats Grid */}
