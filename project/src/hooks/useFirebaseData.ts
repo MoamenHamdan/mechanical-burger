@@ -4,7 +4,7 @@ import { burgersService, categoriesService, customizationService, ordersService 
 
 // Cache for faster loading
 const CACHE_KEY = 'mechanical_burger_cache';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes (reduced for faster updates)
 
 const getCachedData = () => {
   try {
@@ -55,26 +55,31 @@ export const useFirebaseData = () => {
           setLoading(false);
         }
 
-        // Fetch fresh data in parallel
-        const [initialCategories, initialBurgers, initialCustomizations, initialOrders] = await Promise.all([
+        // Fetch only essential data first (burgers and categories)
+        const [initialCategories, initialBurgers] = await Promise.all([
           categoriesService.getAll(),
-          burgersService.getAll(),
-          customizationService.getAll(),
-          ordersService.getAll()
+          burgersService.getAll()
         ]);
 
-        // Update state with fresh data
+        // Update essential data immediately
         setCategories(initialCategories);
         setBurgers(initialBurgers);
-        setCustomizations(initialCustomizations);
-        setOrders(initialOrders);
 
-        // Cache the fresh data
+        // Fetch remaining data in background
+        Promise.all([
+          customizationService.getAll(),
+          ordersService.getAll()
+        ]).then(([initialCustomizations, initialOrders]) => {
+          setCustomizations(initialCustomizations);
+          setOrders(initialOrders);
+        });
+
+        // Cache the essential data
         setCachedData({
           categories: initialCategories,
           burgers: initialBurgers,
-          customizations: initialCustomizations,
-          orders: initialOrders
+          customizations: cachedData?.customizations || [],
+          orders: cachedData?.orders || []
         });
 
         // Attach real-time listeners

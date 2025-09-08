@@ -54,28 +54,28 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
       <MechanicalBackground />
       
       {/* Hero Section */}
-      <div className="relative py-8 px-4 text-center z-10">
+      <div className="relative py-4 sm:py-6 px-3 sm:px-4 text-center z-10">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-10 left-10">
+          <div className="absolute top-5 left-5 sm:top-10 sm:left-10">
             <PistonAnimation className="text-blue-500/30" />
           </div>
-          <div className="absolute top-40 right-20">
+          <div className="absolute top-20 right-10 sm:top-40 sm:right-20">
             <PistonAnimation direction="horizontal" className="text-orange-500/30" />
           </div>
         </div>
         
         <div className="relative z-10 max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-orange-500 bg-clip-text text-transparent mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-orange-500 bg-clip-text text-transparent mb-2 sm:mb-4">
             FUEL YOUR ENGINE
           </h1>
-          <p className="text-lg md:text-xl text-gray-300 mb-6">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 mb-4 sm:mb-6 px-2">
             Precision-engineered burgers for the modern mechanic
           </p>
         </div>
       </div>
 
       {/* Gear Category Navigation */}
-      <div className="max-w-5xl mx-auto px-4 mb-6 relative z-10">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 mb-4 sm:mb-6 relative z-10">
         <GearNav
           categories={categories}
           activeCategoryId={filter}
@@ -84,8 +84,8 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
       </div>
 
       {/* Burger Grid */}
-      <div className="max-w-7xl mx-auto px-4 pb-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-6 sm:pb-8 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {filteredBurgers.map((burger) => (
             <BurgerCard 
               key={burger.id} 

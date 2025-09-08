@@ -33,30 +33,30 @@ export const BurgerCard: React.FC<BurgerCardProps> = ({ burger, category, onCust
         </div>
       </div>
       
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="flex items-start justify-between mb-3">
-          <h3 className="text-2xl font-extrabold text-white tracking-wide group-hover:text-blue-400 transition-colors">
+          <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold text-white tracking-wide group-hover:text-blue-400 transition-colors">
             {burger.name}
           </h3>
-          <span className="text-2xl font-bold text-orange-400">
+          <span className="text-lg sm:text-xl md:text-2xl font-bold text-orange-400">
             ${burger.price.toFixed(2)}
           </span>
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Gauges Row */}
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
             <div className="flex items-center gap-2">
-              <Gauge size={18} className="text-red-400" />
-              <span className="text-sm text-gray-300">Spice</span>
-              <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <Gauge size={16} className="text-red-400" />
+              <span className="text-xs sm:text-sm text-gray-300">Spice</span>
+              <div className="w-16 sm:w-20 md:w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full bg-red-500" style={{ width: `${Math.min(90, 20 + (burger.ingredients.length * 10))}%` }}></div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Fuel size={18} className="text-green-400" />
-              <span className="text-sm text-gray-300">Fuel</span>
-              <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <Fuel size={16} className="text-green-400" />
+              <span className="text-xs sm:text-sm text-gray-300">Fuel</span>
+              <div className="w-16 sm:w-20 md:w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full bg-green-500" style={{ width: `${Math.min(100, 40 + burger.price)}%` }}></div>
               </div>
             </div>
