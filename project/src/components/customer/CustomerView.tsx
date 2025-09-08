@@ -5,6 +5,7 @@ import { CustomizationModal } from './CustomizationModal';
 import { OrderConfirmation } from './OrderConfirmation';
 import { MechanicalBackground } from '../ui/MechanicalBackground';
 import { PistonAnimation } from '../ui/PistonAnimation';
+import { GearNav } from './GearNav';
 
 interface CustomerViewProps {
   burgers: Burger[];
@@ -53,7 +54,7 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
       <MechanicalBackground />
       
       {/* Hero Section */}
-      <div className="relative py-20 px-4 text-center z-10">
+      <div className="relative py-8 px-4 text-center z-10">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-10 left-10">
             <PistonAnimation className="text-blue-500/30" />
@@ -64,47 +65,26 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
         </div>
         
         <div className="relative z-10 max-w-4xl mx-auto">
-          <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-orange-500 bg-clip-text text-transparent mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-orange-500 bg-clip-text text-transparent mb-4">
             FUEL YOUR ENGINE
           </h1>
-          <p className="text-xl md:text-2xl text-gray-300 mb-8">
+          <p className="text-lg md:text-xl text-gray-300 mb-6">
             Precision-engineered burgers for the modern mechanic
           </p>
         </div>
       </div>
 
-      {/* Filter Controls */}
-      <div className="max-w-7xl mx-auto px-4 mb-12 relative z-10">
-        <div className="flex flex-wrap gap-4 justify-center">
-          <button
-            key="all"
-            onClick={() => setFilter('all')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
-              filter === 'all'
-                ? 'bg-blue-600 text-white border border-blue-400 shadow-lg shadow-blue-500/30'
-                : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600 hover:text-white'
-            }`}
-          >
-            ALL MODELS
-          </button>
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setFilter(category.id)}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
-                filter === category.id
-                  ? 'bg-blue-600 text-white border border-blue-400 shadow-lg shadow-blue-500/30'
-                  : 'bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600 hover:text-white'
-              }`}
-            >
-              {category.name.toUpperCase()}
-            </button>
-          ))}
-        </div>
+      {/* Gear Category Navigation */}
+      <div className="max-w-5xl mx-auto px-4 mb-6 relative z-10">
+        <GearNav
+          categories={categories}
+          activeCategoryId={filter}
+          onSelect={(id) => setFilter(id)}
+        />
       </div>
 
       {/* Burger Grid */}
-      <div className="max-w-7xl mx-auto px-4 pb-20 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 pb-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredBurgers.map((burger) => (
             <BurgerCard 
@@ -115,6 +95,24 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900/50 border-t border-gray-700 py-6 mt-8">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p className="text-gray-400 text-sm">
+            © 2024{' '}
+            <a 
+              href="https://moamenhamdanportfolio.web.app/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-orange-400 hover:text-orange-300 transition-colors font-semibold"
+            >
+              Moamen Hamdan
+            </a>
+            . All rights reserved. Built with precision engineering.
+          </p>
+        </div>
+      </footer>
 
       {/* Customization Modal */}
       {selectedBurger && (
