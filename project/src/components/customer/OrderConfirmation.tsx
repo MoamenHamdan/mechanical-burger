@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Clock, Wrench } from 'lucide-react';
+import { CheckCircle, Wrench } from 'lucide-react';
 import { Order } from '../../types';
 import { MechanicalCard } from '../ui/MechanicalCard';
 import { MechanicalButton } from '../ui/MechanicalButton';
@@ -40,6 +40,13 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onN
                 <span className="text-lg font-bold text-white">{order.customerName}</span>
               </div>
               
+              {order.phoneNumber && (
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-lg font-semibold text-gray-300">PHONE</span>
+                  <span className="text-lg font-bold text-blue-400">{order.phoneNumber}</span>
+                </div>
+              )}
+              
               {order.orderType && (
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-lg font-semibold text-gray-300">ORDER TYPE</span>
@@ -77,12 +84,6 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onN
               </div>
             </div>
 
-            <div className="flex items-center justify-center space-x-4 mb-8 p-4 bg-blue-600/20 rounded-lg border border-blue-500/30">
-              <Clock className="text-blue-400" size={24} />
-              <span className="text-lg font-semibold text-blue-300">
-                ESTIMATED PREP TIME: {order.estimatedTime} MINUTES
-              </span>
-            </div>
 
             <div className="space-y-4">
               <p className="text-gray-300">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, BarChart3, ChefHat, Clock, CheckCircle, User, Wrench, FolderPlus, Sliders } from 'lucide-react';
+import { Settings, BarChart3, ChefHat, Clock, CheckCircle, User, Wrench, FolderPlus, Sliders, Lock, Shield } from 'lucide-react';
 import { Burger, Order, Category, CustomizationOption } from '../../types';
 import { BurgerManagement } from './BurgerManagement';
 import { CategoryManagement } from './CategoryManagement';
@@ -26,11 +26,38 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [activeTab, setActiveTab] = useState<'kitchen' | 'burgers' | 'categories' | 'customizations' | 'analytics'>('kitchen');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const [advancedAuth, setAdvancedAuth] = useState(false);
+  const [advancedPassword, setAdvancedPassword] = useState('');
+  const [authError, setAuthError] = useState('');
 
   React.useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  React.useEffect(() => {
+    // Check if advanced admin is already authenticated
+    const isAdvancedAuthed = sessionStorage.getItem('advanced_admin_authed') === 'true';
+    setAdvancedAuth(isAdvancedAuthed);
+  }, []);
+
+  const handleAdvancedAuth = (e: React.FormEvent) => {
+    e.preventDefault();
+    const expectedPassword = import.meta.env.VITE_ADVANCED_ADMIN_PASSWORD || 'admin123';
+    
+    if (advancedPassword === expectedPassword) {
+      sessionStorage.setItem('advanced_admin_authed', 'true');
+      setAdvancedAuth(true);
+      setAuthError('');
+      setAdvancedPassword('');
+    } else {
+      setAuthError('Incorrect advanced admin password');
+    }
+  };
+
+  const isAdvancedFeature = (tab: string) => {
+    return ['burgers', 'categories', 'customizations', 'analytics'].includes(tab);
+  };
 
   const pendingOrders = orders.filter(order => order.status === 'pending');
   const preparingOrders = orders.filter(order => order.status === 'preparing');
@@ -93,6 +120,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             >
               <Settings size={20} />
               <span>Burger Management</span>
+              {!advancedAuth && <Lock size={16} className="text-yellow-400" />}
             </button>
             
             <button
@@ -105,6 +133,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             >
               <FolderPlus size={20} />
               <span>Categories</span>
+              {!advancedAuth && <Lock size={16} className="text-yellow-400" />}
             </button>
             
             <button
@@ -117,6 +146,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             >
               <Sliders size={20} />
               <span>Customizations</span>
+              {!advancedAuth && <Lock size={16} className="text-yellow-400" />}
             </button>
             
             <button
@@ -129,9 +159,64 @@ export const AdminView: React.FC<AdminViewProps> = ({
             >
               <BarChart3 size={20} />
               <span>Analytics</span>
+              {!advancedAuth && <Lock size={16} className="text-yellow-400" />}
             </button>
           </div>
         </div>
+
+        {/* Advanced Admin Authentication Modal */}
+        {!advancedAuth && isAdvancedFeature(activeTab) && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <MechanicalCard hover={false}>
+              <div className="p-8 max-w-md w-full">
+                <div className="text-center mb-6">
+                  <div className="flex justify-center mb-4">
+                    <div className="relative">
+                      <Shield size={64} className="text-yellow-400" />
+                      <Lock size={24} className="absolute -top-2 -right-2 text-red-400" />
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">ADVANCED ADMIN ACCESS</h2>
+                  <p className="text-gray-300">
+                    This feature requires advanced admin privileges
+                  </p>
+                </div>
+                
+                <form onSubmit={handleAdvancedAuth} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-400 mb-2">
+                      ADVANCED ADMIN PASSWORD:
+                    </label>
+                    <input
+                      type="password"
+                      value={advancedPassword}
+                      onChange={(e) => setAdvancedPassword(e.target.value)}
+                      placeholder="Enter advanced admin password"
+                      className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+                    />
+                  </div>
+                  
+                  {authError && (
+                    <div className="text-red-400 text-sm flex items-center gap-2">
+                      <span>⚠️</span>
+                      {authError}
+                    </div>
+                  )}
+                  
+                  <MechanicalButton
+                    type="submit"
+                    className="w-full"
+                    size="lg"
+                  >
+                    <Shield size={20} />
+                    <span className="mx-2">UNLOCK FEATURES</span>
+                    <Shield size={20} />
+                  </MechanicalButton>
+                </form>
+              </div>
+            </MechanicalCard>
+          </div>
+        )}
 
         {/* Tab Content */}
         {activeTab === 'kitchen' ? (
@@ -358,23 +443,29 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </div>
             )}
           </div>
-        ) : activeTab === 'burgers' ? (
+        ) : activeTab === 'burgers' && advancedAuth ? (
           <BurgerManagement
             burgers={burgers}
             categories={categories}
           />
-        ) : activeTab === 'categories' ? (
+        ) : activeTab === 'categories' && advancedAuth ? (
           <CategoryManagement
             categories={categories}
           />
-        ) : activeTab === 'customizations' ? (
+        ) : activeTab === 'customizations' && advancedAuth ? (
           <CustomizationManagement
             customizations={customizations}
             categories={categories}
           />
-        ) : (
+        ) : activeTab === 'analytics' && advancedAuth ? (
           <OrderAnalytics orders={orders} />
-        )}
+        ) : isAdvancedFeature(activeTab) ? (
+          <div className="text-center py-20">
+            <Lock size={64} className="text-yellow-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-400 mb-2">FEATURE LOCKED</h3>
+            <p className="text-gray-500">Advanced admin authentication required</p>
+          </div>
+        ) : null}
       </div>
     </div>
   );

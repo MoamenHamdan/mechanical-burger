@@ -39,6 +39,7 @@ export interface OrderItem {
 export interface Order {
   id: string;
   customerName: string;
+  phoneNumber?: string;
   items: OrderItem[];
   totalAmount: number;
   timestamp: Date;

@@ -118,7 +118,6 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
       {selectedBurger && (
         <CustomizationModal
           burger={selectedBurger}
-          categories={categories}
           customizations={customizations}
           onClose={() => setSelectedBurger(null)}
           onOrderComplete={handleOrderComplete}

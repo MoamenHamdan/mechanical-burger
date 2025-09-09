@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { X, Plus, Minus, Wrench, MessageSquare } from 'lucide-react';
-import { Burger, CustomizationOption, Order, OrderItem, Category } from '../../types';
+import { X, Plus, Minus, Wrench, MessageSquare, Phone } from 'lucide-react';
+import { Burger, CustomizationOption, Order, OrderItem } from '../../types';
 import { MechanicalButton } from '../ui/MechanicalButton';
 import { MechanicalCard } from '../ui/MechanicalCard';
 import { ordersService } from '../../services/firebaseService';
 
 interface CustomizationModalProps {
   burger: Burger;
-  categories: Category[];
   customizations: CustomizationOption[];
   onClose: () => void;
   onOrderComplete: (order: Order) => void;
@@ -15,22 +14,73 @@ interface CustomizationModalProps {
 
 export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   burger,
-  categories,
   customizations,
   onClose,
   onOrderComplete
 }) => {
   const [customerName, setCustomerName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [comments, setComments] = useState('');
   const [selectedCustomizations, setSelectedCustomizations] = useState<CustomizationOption[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [orderType, setOrderType] = useState<'dine-in' | 'delivery'>('dine-in');
+  const [phoneError, setPhoneError] = useState('');
 
   // Filter customizations for this burger's category or global ones
   const availableCustomizations = customizations.filter(
     c => !c.categoryId || c.categoryId === burger.categoryId
   );
+
+  // Lebanese phone number validation
+  const validateLebanesePhone = (phone: string): boolean => {
+    // Remove all non-digit characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Lebanese phone number patterns:
+    // 03XX XXX XXX (mobile)
+    // 70X XXX XXX (mobile)
+    // 71X XXX XXX (mobile)
+    // 76X XXX XXX (mobile)
+    // 78X XXX XXX (mobile)
+    // 79X XXX XXX (mobile)
+    // 81X XXX XXX (mobile)
+    // 01X XXX XXX (landline)
+    // 04X XXX XXX (landline)
+    // 05X XXX XXX (landline)
+    // 06X XXX XXX (landline)
+    // 07X XXX XXX (landline)
+    // 08X XXX XXX (landline)
+    // 09X XXX XXX (landline)
+    
+    const patterns = [
+      /^03\d{6}$/,  // 03XX XXX XXX
+      /^70\d{6}$/,  // 70X XXX XXX
+      /^71\d{6}$/,  // 71X XXX XXX
+      /^76\d{6}$/,  // 76X XXX XXX
+      /^78\d{6}$/,  // 78X XXX XXX
+      /^79\d{6}$/,  // 79X XXX XXX
+      /^81\d{6}$/,  // 81X XXX XXX
+      /^01\d{6}$/,  // 01X XXX XXX
+      /^04\d{6}$/,  // 04X XXX XXX
+      /^05\d{6}$/,  // 05X XXX XXX
+      /^06\d{6}$/,  // 06X XXX XXX
+      /^07\d{6}$/,  // 07X XXX XXX
+      /^08\d{6}$/,  // 08X XXX XXX
+      /^09\d{6}$/   // 09X XXX XXX
+    ];
+    
+    return patterns.some(pattern => pattern.test(cleanPhone));
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setPhoneNumber(value);
+    if (value.trim() && !validateLebanesePhone(value)) {
+      setPhoneError('Please enter a valid Lebanese phone number');
+    } else {
+      setPhoneError('');
+    }
+  };
 
   const toggleCustomization = (option: CustomizationOption) => {
     setSelectedCustomizations(prev => {
@@ -50,6 +100,12 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
 
   const handleOrder = async () => {
     if (!customerName.trim()) return;
+    
+    // Validate phone number if provided
+    if (phoneNumber.trim() && !validateLebanesePhone(phoneNumber)) {
+      setPhoneError('Please enter a valid Lebanese phone number');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -63,6 +119,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
       const order: Order = {
         id: Date.now().toString(),
         customerName: customerName.trim(),
+        phoneNumber: phoneNumber.trim() || undefined,
         items: [orderItem],
         totalAmount: calculateTotalPrice(),
         timestamp: new Date(),
@@ -114,7 +171,6 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                 
                 <div className="space-y-4">
                   <h3 className="text-xl font-bold text-white">{burger.name}</h3>
-                  <p className="text-gray-300">{burger.description}</p>
                   
                   <div>
                     <h4 className="text-sm font-semibold text-gray-400 mb-2">BASE COMPONENTS:</h4>
@@ -145,6 +201,33 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                     placeholder="Enter your name"
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
+                    <Phone size={16} />
+                    PHONE NUMBER (Optional):
+                  </label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    placeholder="03XX XXX XXX or 70X XXX XXX"
+                    className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:ring-2 transition-all ${
+                      phoneError 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                        : 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
+                    }`}
+                  />
+                  {phoneError && (
+                    <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
+                      <span>⚠️</span>
+                      {phoneError}
+                    </p>
+                  )}
+                  <p className="text-gray-500 text-xs mt-1">
+                    Lebanese format: 03XX XXX XXX, 70X XXX XXX, 71X XXX XXX, etc.
+                  </p>
                 </div>
 
                 <div>
