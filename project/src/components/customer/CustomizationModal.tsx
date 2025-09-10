@@ -24,7 +24,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   const [selectedCustomizations, setSelectedCustomizations] = useState<CustomizationOption[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [orderType, setOrderType] = useState<'dine-in' | 'delivery'>('dine-in');
+  const [orderType, setOrderType] = useState<'dine-in' | 'takeaway'>('dine-in');
   const [phoneError, setPhoneError] = useState('');
 
   // Filter customizations for this burger's category or global ones
@@ -101,8 +101,13 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   const handleOrder = async () => {
     if (!customerName.trim()) return;
     
-    // Validate phone number if provided
-    if (phoneNumber.trim() && !validateLebanesePhone(phoneNumber)) {
+    // Validate phone number (now mandatory)
+    if (!phoneNumber.trim()) {
+      setPhoneError('Phone number is required');
+      return;
+    }
+    
+    if (!validateLebanesePhone(phoneNumber)) {
       setPhoneError('Please enter a valid Lebanese phone number');
       return;
     }
@@ -119,7 +124,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
       const order: Order = {
         id: Date.now().toString(),
         customerName: customerName.trim(),
-        phoneNumber: phoneNumber.trim() || undefined,
+        phoneNumber: phoneNumber.trim(),
         items: [orderItem],
         totalAmount: calculateTotalPrice(),
         timestamp: new Date(),
@@ -206,13 +211,13 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                 <div>
                   <label className="block text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
                     <Phone size={16} />
-                    PHONE NUMBER (Optional):
+                    PHONE NUMBER:
                   </label>
                   <input
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder="03XX XXX XXX or 70X XXX XXX"
+                    placeholder="03 XXX XXX"
                     className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:ring-2 transition-all ${
                       phoneError 
                         ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
@@ -226,7 +231,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                     </p>
                   )}
                   <p className="text-gray-500 text-xs mt-1">
-                    Lebanese format: 03XX XXX XXX, 70X XXX XXX, 71X XXX XXX, etc.
+                    Lebanese format: 03 XXX XXX
                   </p>
                 </div>
 
@@ -246,14 +251,14 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                       🍽️ DINE IN
                     </button>
                     <button
-                      onClick={() => setOrderType('delivery')}
+                      onClick={() => setOrderType('takeaway')}
                       className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
-                        orderType === 'delivery'
+                        orderType === 'takeaway'
                           ? 'border-blue-500 bg-blue-500/20 text-blue-300'
                           : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
                       }`}
                     >
-                      🚚 DELIVERY
+                      🚚 TAKEAWAY
                     </button>
                   </div>
                 </div>
@@ -338,7 +343,7 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                   
                   <MechanicalButton
                     onClick={handleOrder}
-                    disabled={!customerName.trim() || loading}
+                    disabled={!customerName.trim() || !phoneNumber.trim() || loading}
                     className="w-full"
                     size="lg"
                   >

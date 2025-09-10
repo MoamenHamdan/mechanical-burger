@@ -39,14 +39,14 @@ export interface OrderItem {
 export interface Order {
   id: string;
   customerName: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   items: OrderItem[];
   totalAmount: number;
   timestamp: Date;
   status: 'pending' | 'preparing' | 'ready' | 'completed';
   estimatedTime: number;
   comments?: string;
-  orderType?: 'dine-in' | 'delivery';
+  orderType?: 'dine-in' | 'takeaway';
 }
 
 export type ViewMode = 'customer' | 'admin';

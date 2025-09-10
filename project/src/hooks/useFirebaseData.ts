@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Burger, Category, CustomizationOption, Order } from '../types';
 import { burgersService, categoriesService, customizationService, ordersService } from '../services/firebaseService';
 
 // Cache for faster loading
 const CACHE_KEY = 'mechanical_burger_cache';
-const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes (reduced for faster updates)
+const CACHE_DURATION = 1 * 60 * 1000; // 1 minute (optimized for real-time updates)
 
 const getCachedData = () => {
   try {
@@ -109,12 +109,13 @@ export const useFirebaseData = () => {
     };
   }, []);
 
-  return {
+  // Memoize the return object to prevent unnecessary re-renders
+  return useMemo(() => ({
     burgers,
     categories,
     customizations,
     orders,
     loading,
     error
-  };
+  }), [burgers, categories, customizations, orders, loading, error]);
 };

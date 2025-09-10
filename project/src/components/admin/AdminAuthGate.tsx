@@ -15,7 +15,14 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ onAuthenticated })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const expected = import.meta.env.VITE_ADMIN_PASSWORD || '';
+    
+    // Check for new password in localStorage/sessionStorage first
+    const newPassword = localStorage.getItem('new_VITE_ADMIN_PASSWORD') || 
+                       sessionStorage.getItem('new_VITE_ADMIN_PASSWORD');
+    
+    // Fall back to environment variable
+    const expected = newPassword || import.meta.env.VITE_ADMIN_PASSWORD || '';
+    
     if (expected && passwordInput === expected) {
       sessionStorage.setItem('admin_authed', 'true');
       setError(null);

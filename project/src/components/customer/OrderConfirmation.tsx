@@ -1,18 +1,36 @@
-import React from 'react';
-import { CheckCircle, Wrench } from 'lucide-react';
+import React, { useState } from 'react';
+import { CheckCircle, Wrench, X, Edit } from 'lucide-react';
 import { Order } from '../../types';
 import { MechanicalCard } from '../ui/MechanicalCard';
 import { MechanicalButton } from '../ui/MechanicalButton';
 import { GearAnimation } from '../ui/GearAnimation';
 import { useLanguage } from '../../hooks/useLanguage';
+import { ordersService } from '../../services/firebaseService';
 
 interface OrderConfirmationProps {
   order: Order;
   onNewOrder: () => void;
+  onEditOrder?: () => void;
 }
 
-export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onNewOrder }) => {
+export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onNewOrder, onEditOrder }) => {
   const { isRTL } = useLanguage();
+  const [loading, setLoading] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  const handleCancelOrder = async () => {
+    setLoading(true);
+    try {
+      await ordersService.delete(order.id);
+      onNewOrder(); // Go back to menu
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      alert('Failed to cancel order. Please try again.');
+    } finally {
+      setLoading(false);
+      setShowCancelConfirm(false);
+    }
+  };
   
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4 ${isRTL ? 'rtl' : 'ltr'}`}>
@@ -40,18 +58,16 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onN
                 <span className="text-lg font-bold text-white">{order.customerName}</span>
               </div>
               
-              {order.phoneNumber && (
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-lg font-semibold text-gray-300">PHONE</span>
-                  <span className="text-lg font-bold text-blue-400">{order.phoneNumber}</span>
-                </div>
-              )}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-lg font-semibold text-gray-300">PHONE</span>
+                <span className="text-lg font-bold text-blue-400">{order.phoneNumber}</span>
+              </div>
               
               {order.orderType && (
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-lg font-semibold text-gray-300">ORDER TYPE</span>
-                  <span className={`text-lg font-bold ${order.orderType === 'delivery' ? 'text-blue-400' : 'text-green-400'}`}>
-                    {order.orderType === 'delivery' ? '🚚 DELIVERY' : '🍽️ DINE IN'}
+                  <span className={`text-lg font-bold ${order.orderType === 'takeaway' ? 'text-blue-400' : 'text-green-400'}`}>
+                    {order.orderType === 'takeaway' ? '🚚 TAKEAWAY' : '🍽️ DINE IN'}
                   </span>
                 </div>
               )}
@@ -90,15 +106,84 @@ export const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ order, onN
                 Our kitchen is ready to assemble your order!
               </p>
               
-              <MechanicalButton onClick={onNewOrder} size="lg" className="w-full">
-                <Wrench size={20} />
-                <span className="mx-2">ORDER ANOTHER</span>
-                <Wrench size={20} />
-              </MechanicalButton>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <MechanicalButton onClick={onNewOrder} size="lg" className="w-full">
+                  <Wrench size={20} />
+                  <span className="mx-2">CONFIRM ORDER </span>
+                  <Wrench size={20} />
+                </MechanicalButton>
+                
+                {/* {onEditOrder && (
+                  <MechanicalButton onClick={onEditOrder} size="lg" variant="secondary" className="w-full">
+                    <Edit size={20} />
+                    <span className="mx-2">EDIT ORDER</span>
+                    <Edit size={20} />
+                  </MechanicalButton>
+                )} */}
+                
+                <MechanicalButton 
+                  onClick={() => setShowCancelConfirm(true)} 
+                  size="lg" 
+                  variant="danger" 
+                  className="w-full"
+                  disabled={loading}
+                >
+                  <X size={20} />
+                  <span className="mx-2">CANCEL ORDER</span>
+                  <X size={20} />
+                </MechanicalButton>
+              </div>
             </div>
           </div>
         </MechanicalCard>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <MechanicalCard hover={false}>
+            <div className="p-6 max-w-md w-full">
+              <div className="text-center mb-6">
+                <div className="flex justify-center mb-4">
+                  <div className="relative">
+                    <X size={64} className="text-red-400" />
+                    <GearAnimation size="lg" className="absolute -top-2 -right-2 text-red-400" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">CANCEL ORDER?</h2>
+                <p className="text-gray-300">
+                  Are you sure you want to cancel this order? This action cannot be undone.
+                </p>
+              </div>
+              
+              <div className="flex gap-3">
+                <MechanicalButton
+                  onClick={handleCancelOrder}
+                  className="flex-1"
+                  size="lg"
+                  variant="danger"
+                  disabled={loading}
+                >
+                  <X size={20} />
+                  <span className="mx-2">{loading ? 'CANCELING...' : 'YES, CANCEL'}</span>
+                  <X size={20} />
+                </MechanicalButton>
+                
+                <MechanicalButton
+                  onClick={() => setShowCancelConfirm(false)}
+                  className="flex-1"
+                  size="lg"
+                  variant="secondary"
+                >
+                  <CheckCircle size={20} />
+                  <span className="mx-2">KEEP ORDER</span>
+                  <CheckCircle size={20} />
+                </MechanicalButton>
+              </div>
+            </div>
+          </MechanicalCard>
+        </div>
+      )}
     </div>
   );
 };

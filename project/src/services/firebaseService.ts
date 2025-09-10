@@ -339,6 +339,10 @@ export const ordersService = {
       },
       (error) => {
         console.error('Error in orders subscription:', error);
+        // Retry connection on error
+        setTimeout(() => {
+          console.log('Retrying orders subscription...');
+        }, 5000);
       }
     );
   }

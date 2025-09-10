@@ -46,7 +46,16 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
   };
 
   if (showConfirmation && currentOrder) {
-    return <OrderConfirmation order={currentOrder} onNewOrder={handleNewOrder} />;
+    return (
+      <OrderConfirmation 
+        order={currentOrder} 
+        onNewOrder={handleNewOrder}
+        onEditOrder={() => {
+          setShowConfirmation(false);
+          setSelectedBurger(currentOrder.items[0].burger);
+        }}
+      />
+    );
   }
 
   return (
@@ -97,9 +106,9 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900/50 border-t border-gray-700 py-6 mt-8">
+      <footer className="relative z-10 bg-gray-900 border-t border-gray-700 py-8 mt-12">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-300 text-sm">
             © 2024{' '}
             <a 
               href="https://moamenhamdanportfolio.web.app/" 

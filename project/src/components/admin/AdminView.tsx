@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, BarChart3, ChefHat, Clock, CheckCircle, User, Wrench, FolderPlus, Sliders, Lock, Shield } from 'lucide-react';
+import { Settings, BarChart3, ChefHat, Clock, CheckCircle, User, Wrench, FolderPlus, Sliders, Lock, Shield, X, Trash2, Phone } from 'lucide-react';
 import { Burger, Order, Category, CustomizationOption } from '../../types';
 import { BurgerManagement } from './BurgerManagement';
 import { CategoryManagement } from './CategoryManagement';
@@ -43,7 +43,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
   const handleAdvancedAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    const expectedPassword = import.meta.env.VITE_ADVANCED_ADMIN_PASSWORD || 'admin123';
+    
+    // Check for new password in localStorage/sessionStorage first
+    const newPassword = localStorage.getItem('new_VITE_ADVANCED_ADMIN_PASSWORD') || 
+                       sessionStorage.getItem('new_VITE_ADVANCED_ADMIN_PASSWORD');
+    
+    // Fall back to environment variable
+    const expectedPassword = newPassword || import.meta.env.VITE_ADVANCED_ADMIN_PASSWORD || 'admin123';
     
     if (advancedPassword === expectedPassword) {
       sessionStorage.setItem('advanced_admin_authed', 'true');
@@ -53,6 +59,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
     } else {
       setAuthError('Incorrect advanced admin password');
     }
+  };
+
+  const handleCancelAdvancedAuth = () => {
+    setAdvancedPassword('');
+    setAuthError('');
+    setActiveTab('kitchen'); // Go back to kitchen tab
   };
 
   const isAdvancedFeature = (tab: string) => {
@@ -75,6 +87,22 @@ export const AdminView: React.FC<AdminViewProps> = ({
     } catch (error) {
       console.error('Error updating order status:', error);
       alert('Failed to update order status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await ordersService.delete(orderId);
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      alert('Failed to delete order');
     } finally {
       setLoading(false);
     }
@@ -203,15 +231,28 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     </div>
                   )}
                   
-                  <MechanicalButton
-                    type="submit"
-                    className="w-full"
-                    size="lg"
-                  >
-                    <Shield size={20} />
-                    <span className="mx-2">UNLOCK FEATURES</span>
-                    <Shield size={20} />
-                  </MechanicalButton>
+                  <div className="flex gap-3">
+                    <MechanicalButton
+                      onClick={() => handleAdvancedAuth({} as React.FormEvent)}
+                      className="flex-1"
+                      size="lg"
+                    >
+                      <Shield size={20} />
+                      <span className="mx-2">UNLOCK FEATURES</span>
+                      <Shield size={20} />
+                    </MechanicalButton>
+                    
+                    <MechanicalButton
+                      onClick={handleCancelAdvancedAuth}
+                      className="flex-1"
+                      size="lg"
+                      variant="secondary"
+                    >
+                      <X size={20} />
+                      <span className="mx-2">CANCEL</span>
+                      <X size={20} />
+                    </MechanicalButton>
+                  </div>
                 </form>
               </div>
             </MechanicalCard>
@@ -260,7 +301,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex items-center space-x-3">
                             <User className="text-blue-400" size={20} />
-                            <span className="text-lg font-bold text-white">{order.customerName}</span>
+                            <div>
+                              <span className="text-lg font-bold text-white">{order.customerName}</span>
+                              <div className="flex items-center space-x-1 mt-1">
+                                <Phone className="text-blue-400" size={14} />
+                                <span className="text-sm text-blue-400">{order.phoneNumber}</span>
+                              </div>
+                            </div>
                           </div>
                           <div className="text-right">
                             <div className="text-sm text-gray-400">#{order.id}</div>
@@ -309,15 +356,25 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           </div>
                         )}
                         
-                        <MechanicalButton
-                          onClick={() => handleOrderStatusChange(order.id, 'preparing')}
-                          className="w-full"
-                          variant="primary"
-                          disabled={loading}
-                        >
-                          <Wrench size={18} />
-                          <span>START ASSEMBLY</span>
-                        </MechanicalButton>
+                        <div className="flex gap-2">
+                          <MechanicalButton
+                            onClick={() => handleOrderStatusChange(order.id, 'preparing')}
+                            className="flex-1"
+                            variant="primary"
+                            disabled={loading}
+                          >
+                            <Wrench size={18} />
+                            <span>START ASSEMBLY</span>
+                          </MechanicalButton>
+                          <MechanicalButton
+                            onClick={() => handleDeleteOrder(order.id)}
+                            variant="danger"
+                            disabled={loading}
+                            className="px-4"
+                          >
+                            <Trash2 size={18} />
+                          </MechanicalButton>
+                        </div>
                       </div>
                     </MechanicalCard>
                   ))}
@@ -337,7 +394,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex items-center space-x-3">
                             <User className="text-blue-400" size={20} />
-                            <span className="text-lg font-bold text-white">{order.customerName}</span>
+                            <div>
+                              <span className="text-lg font-bold text-white">{order.customerName}</span>
+                              <div className="flex items-center space-x-1 mt-1">
+                                <Phone className="text-blue-400" size={14} />
+                                <span className="text-sm text-blue-400">{order.phoneNumber}</span>
+                              </div>
+                            </div>
                           </div>
                           <div className="text-right">
                             <div className="text-sm text-gray-400">#{order.id}</div>
@@ -375,15 +438,25 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           ))}
                         </div>
                         
-                        <MechanicalButton
-                          onClick={() => handleOrderStatusChange(order.id, 'ready')}
-                          className="w-full"
-                          variant="secondary"
-                          disabled={loading}
-                        >
-                          <CheckCircle size={18} />
-                          <span>MARK AS READY</span>
-                        </MechanicalButton>
+                        <div className="flex gap-2">
+                          <MechanicalButton
+                            onClick={() => handleOrderStatusChange(order.id, 'ready')}
+                            className="flex-1"
+                            variant="secondary"
+                            disabled={loading}
+                          >
+                            <CheckCircle size={18} />
+                            <span>MARK AS READY</span>
+                          </MechanicalButton>
+                          <MechanicalButton
+                            onClick={() => handleDeleteOrder(order.id)}
+                            variant="danger"
+                            disabled={loading}
+                            className="px-4"
+                          >
+                            <Trash2 size={18} />
+                          </MechanicalButton>
+                        </div>
                       </div>
                     </MechanicalCard>
                   ))}
@@ -401,7 +474,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex items-center space-x-3">
                             <User className="text-blue-400" size={20} />
-                            <span className="text-lg font-bold text-white">{order.customerName}</span>
+                            <div>
+                              <span className="text-lg font-bold text-white">{order.customerName}</span>
+                              <div className="flex items-center space-x-1 mt-1">
+                                <Phone className="text-blue-400" size={14} />
+                                <span className="text-sm text-blue-400">{order.phoneNumber}</span>
+                              </div>
+                            </div>
                           </div>
                           <div className="text-right">
                             <div className="text-sm text-gray-400">#{order.id}</div>
@@ -420,14 +499,24 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           ))}
                         </div>
                         
-                        <MechanicalButton
-                          onClick={() => handleOrderStatusChange(order.id, 'completed')}
-                          className="w-full"
-                          variant="secondary"
-                          disabled={loading}
-                        >
-                          MARK AS COMPLETED
-                        </MechanicalButton>
+                        <div className="flex gap-2">
+                          <MechanicalButton
+                            onClick={() => handleOrderStatusChange(order.id, 'completed')}
+                            className="flex-1"
+                            variant="secondary"
+                            disabled={loading}
+                          >
+                            MARK AS COMPLETED
+                          </MechanicalButton>
+                          <MechanicalButton
+                            onClick={() => handleDeleteOrder(order.id)}
+                            variant="danger"
+                            disabled={loading}
+                            className="px-4"
+                          >
+                            <Trash2 size={18} />
+                          </MechanicalButton>
+                        </div>
                       </div>
                     </MechanicalCard>
                   ))}
