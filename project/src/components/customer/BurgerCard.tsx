@@ -82,7 +82,7 @@ export const BurgerCard: React.FC<BurgerCardProps> = ({ burger, category, onCust
             className="w-full flex items-center justify-center space-x-2"
           >
             <Wrench size={18} />
-            <span>Customize & Order</span>
+            <span>Customize</span>
             <Plus size={18} />
           </MechanicalButton>
         </div>

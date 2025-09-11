@@ -10,13 +10,19 @@ interface CustomizationModalProps {
   customizations: CustomizationOption[];
   onClose: () => void;
   onOrderComplete: (order: Order) => void;
+  mode?: 'addToCart' | 'directOrder';
+  onAddToCart?: (item: OrderItem) => void;
+  disableCustomizations?: boolean;
 }
 
 export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   burger,
   customizations,
   onClose,
-  onOrderComplete
+  onOrderComplete,
+  mode = 'directOrder',
+  onAddToCart,
+  disableCustomizations = false
 }) => {
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -28,9 +34,11 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
   const [phoneError, setPhoneError] = useState('');
 
   // Filter customizations for this burger's category or global ones
-  const availableCustomizations = customizations.filter(
-    c => !c.categoryId || c.categoryId === burger.categoryId
-  );
+  const availableCustomizations = disableCustomizations
+    ? []
+    : customizations.filter(
+        c => !c.categoryId || c.categoryId === burger.categoryId
+      );
 
   // Lebanese phone number validation
   const validateLebanesePhone = (phone: string): boolean => {
@@ -144,6 +152,21 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
     }
   };
 
+  const handleAddItem = () => {
+    const total = calculateTotalPrice();
+    const orderItem: OrderItem = {
+      burger,
+      customizations: selectedCustomizations,
+      quantity,
+      totalPrice: total,
+      comments: comments.trim() || undefined
+    };
+    if (onAddToCart) {
+      onAddToCart(orderItem);
+    }
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -193,114 +216,121 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                 </div>
               </div>
 
-              {/* Right Column - Customization Options & Order Details */}
+              {/* Right Column - Customization Options & Order Details */
+              }
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-400 mb-2">
-                    CUSTOMER NAME:
-                  </label>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter your name"
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  />
-                </div>
+                {mode === 'directOrder' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-400 mb-2">
+                        CUSTOMER NAME:
+                      </label>
+                      <input
+                        type="text"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Enter your name"
+                        className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
-                    <Phone size={16} />
-                    PHONE NUMBER:
-                  </label>
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    placeholder="03 XXX XXX"
-                    className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:ring-2 transition-all ${
-                      phoneError 
-                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
-                        : 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
-                    }`}
-                  />
-                  {phoneError && (
-                    <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
-                      <span>⚠️</span>
-                      {phoneError}
-                    </p>
-                  )}
-                  <p className="text-gray-500 text-xs mt-1">
-                    Lebanese format: 03 XXX XXX
-                  </p>
-                </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
+                        <Phone size={16} />
+                        PHONE NUMBER:
+                      </label>
+                      <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        placeholder="03 XXX XXX"
+                        className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:ring-2 transition-all ${
+                          phoneError 
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                            : 'border-gray-600 focus:border-blue-500 focus:ring-blue-500/20'
+                        }`}
+                      />
+                      {phoneError && (
+                        <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
+                          <span>⚠️</span>
+                          {phoneError}
+                        </p>
+                      )}
+                      <p className="text-gray-500 text-xs mt-1">
+                        Lebanese format: 03 XXX XXX
+                      </p>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-400 mb-2">
-                    ORDER TYPE:
-                  </label>
-                  <div className="flex gap-4">
-                    <button
-                      onClick={() => setOrderType('dine-in')}
-                      className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
-                        orderType === 'dine-in'
-                          ? 'border-green-500 bg-green-500/20 text-green-300'
-                          : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
-                      }`}
-                    >
-                      🍽️ DINE IN
-                    </button>
-                    <button
-                      onClick={() => setOrderType('takeaway')}
-                      className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
-                        orderType === 'takeaway'
-                          ? 'border-blue-500 bg-blue-500/20 text-blue-300'
-                          : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
-                      }`}
-                    >
-                      🚚 TAKEAWAY
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-lg font-semibold text-white mb-4">MODIFICATIONS:</h4>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {availableCustomizations.map((option) => {
-                      const isSelected = selectedCustomizations.find(c => c.id === option.id);
-                      return (
-                        <div
-                          key={option.id}
-                          onClick={() => toggleCustomization(option)}
-                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-300 ${
-                            isSelected
-                              ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                              : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500 hover:bg-gray-700'
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-400 mb-2">
+                        ORDER TYPE:
+                      </label>
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => setOrderType('dine-in')}
+                          className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
+                            orderType === 'dine-in'
+                              ? 'border-green-500 bg-green-500/20 text-green-300'
+                              : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
                           }`}
                         >
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
-                              isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-500'
-                            }`}>
-                              {isSelected && <div className="w-2 h-2 bg-white rounded"></div>}
+                          🍽️ DINE IN
+                        </button>
+                        <button
+                          onClick={() => setOrderType('takeaway')}
+                          className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
+                            orderType === 'takeaway'
+                              ? 'border-blue-500 bg-blue-500/20 text-blue-300'
+                              : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-gray-500'
+                          }`}
+                        >
+                          🚚 TAKEAWAY
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {!disableCustomizations && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-white mb-4">MODIFICATIONS:</h4>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {availableCustomizations.map((option) => {
+                        const isSelected = selectedCustomizations.find(c => c.id === option.id);
+                        return (
+                          <div
+                            key={option.id}
+                            onClick={() => toggleCustomization(option)}
+                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-300 ${
+                              isSelected
+                                ? 'bg-blue-600/20 border-blue-500 text-blue-300'
+                                : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:border-gray-500 hover:bg-gray-700'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                                isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-500'
+                              }`}>
+                                {isSelected && <div className="w-2 h-2 bg-white rounded"></div>}
+                              </div>
+                              <span className="font-medium">{option.name}</span>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                option.type === 'remove' ? 'bg-red-500/20 text-red-300' :
+                                option.type === 'add' ? 'bg-green-500/20 text-green-300' :
+                                'bg-orange-500/20 text-orange-300'
+                              }`}>
+                                {option.type.toUpperCase()}
+                              </span>
                             </div>
-                            <span className="font-medium">{option.name}</span>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              option.type === 'remove' ? 'bg-red-500/20 text-red-300' :
-                              option.type === 'add' ? 'bg-green-500/20 text-green-300' :
-                              'bg-orange-500/20 text-orange-300'
-                            }`}>
-                              {option.type.toUpperCase()}
+                            <span className="font-bold">
+                              {option.price > 0 ? `+$${option.price.toFixed(2)}` : 'FREE'}
                             </span>
                           </div>
-                          <span className="font-bold">
-                            {option.price > 0 ? `+$${option.price.toFixed(2)}` : 'FREE'}
-                          </span>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
@@ -341,14 +371,24 @@ export const CustomizationModal: React.FC<CustomizationModalProps> = ({
                     <span className="text-orange-400">${calculateTotalPrice().toFixed(2)}</span>
                   </div>
                   
-                  <MechanicalButton
-                    onClick={handleOrder}
-                    disabled={!customerName.trim() || !phoneNumber.trim() || loading}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {loading ? 'PLACING ORDER...' : 'PLACE ORDER'}
-                  </MechanicalButton>
+                  {mode === 'directOrder' ? (
+                    <MechanicalButton
+                      onClick={handleOrder}
+                      disabled={!customerName.trim() || !phoneNumber.trim() || loading}
+                      className="w-full"
+                      size="lg"
+                    >
+                      {loading ? 'PLACING ORDER...' : 'PLACE ORDER'}
+                    </MechanicalButton>
+                  ) : (
+                    <MechanicalButton
+                      onClick={handleAddItem}
+                      className="w-full"
+                      size="lg"
+                    >
+                      ADD TO CART
+                    </MechanicalButton>
+                  )}
                 </div>
               </div>
             </div>
