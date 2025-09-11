@@ -11,7 +11,7 @@ const firebaseConfig = {
 
   projectId: "mechanicalburger-7cda8",
 
-  storageBucket: "mechanicalburger-7cda8.firebasestorage.app",
+  storageBucket: "mechanicalburger-7cda8.appspot.com",
 
   messagingSenderId: "318105174365",
 

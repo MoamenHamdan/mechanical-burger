@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { User, Home, Settings, Phone, MapPin, Lock, Key, Shield, Save, X } from 'lucide-react';
+import { User, Home, Phone, MapPin, Lock, Key, Shield, Save, X } from 'lucide-react';
 import { ViewMode } from '../types';
-import { GearAnimation } from './ui/GearAnimation';
+// import { GearAnimation } from './ui/GearAnimation';
 import { useLanguage } from '../hooks/useLanguage';
 import { passwordService, PasswordChangeRequest } from '../services/passwordService';
+import logo from '../images /logo.png';
 
 interface HeaderProps {
   currentView: ViewMode;
@@ -79,35 +80,16 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onViewChange }) => 
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo Section */}
           <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2 sm:space-x-3' : 'space-x-2 sm:space-x-3'}`}>
-            <div className="relative">
-              <GearAnimation size="sm" speed="slow" className="text-blue-400" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-orange-500 rounded-full animate-pulse"></div>
-              </div>
-            </div>
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-orange-500 bg-clip-text text-transparent">
-                Mechanical Burger
-              </h1>
-            </div>
+            <img src={logo} alt="Logo" className="h-10 w-10 sm:h-12 sm:w-12 rounded-md object-cover border border-orange-500" />
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-orange-400">
+              Mechanical Burger
+            </h1>
           </div>
 
           {/* Navigation */}
           <nav className="flex items-center space-x-1 sm:space-x-2">
             {currentView === 'customer' ? (
               <>
-                <button
-                  onClick={() => onViewChange('customer')}
-                  className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-all duration-300 text-xs sm:text-sm ${
-                    currentView === 'customer'
-                      ? 'bg-blue-600 text-white shadow-blue-500/30'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700'
-                  }`}
-                >
-                  <Home size={14} />
-                  <span className="hidden sm:inline">Home</span>
-                </button>
-                
                 <a href="#menu" className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-all duration-300 text-xs sm:text-sm text-gray-300 hover:text-white hover:bg-gray-700">
                   <User size={14} />
                   <span className="hidden sm:inline">Menu</span>
@@ -115,7 +97,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onViewChange }) => 
                 
                 <a href="#contact" className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-all duration-300 text-xs sm:text-sm text-gray-300 hover:text-white hover:bg-gray-700">
                   <Phone size={14} />
-                  <span className="hidden sm:inline">Contact</span>
+                  <span className="hidden sm:inline">Phone</span>
                 </a>
                 
                 <a href="#location" className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-all duration-300 text-xs sm:text-sm text-gray-300 hover:text-white hover:bg-gray-700">

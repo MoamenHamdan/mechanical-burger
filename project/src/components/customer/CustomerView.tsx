@@ -6,6 +6,7 @@ import { OrderConfirmation } from './OrderConfirmation';
 import { MechanicalBackground } from '../ui/MechanicalBackground';
 import { PistonAnimation } from '../ui/PistonAnimation';
 import { GearNav } from './GearNav';
+import logo from '../../images /logo.png';
 import { MechanicalCard } from '../ui/MechanicalCard';
 import { MechanicalButton } from '../ui/MechanicalButton';
 import { ordersService } from '../../services/firebaseService';
@@ -166,11 +167,12 @@ export const CustomerView: React.FC<CustomerViewProps> = ({
           </div>
         </div>
         
-        <div className="relative z-10 max-w-4xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-orange-500 bg-clip-text text-transparent mb-2 sm:mb-4">
+        <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center">
+          <img src={logo} alt="Logo" className="h-14 w-14 sm:h-20 sm:w-20 rounded-md border border-orange-500 mb-3" />
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-extrabold text-orange-400 mb-2 sm:mb-4">
             FUEL YOUR ENGINE
           </h1>
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 mb-4 sm:mb-6 px-2">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-orange-300 mb-4 sm:mb-6 px-2">
             Precision-engineered burgers for the modern mechanic
           </p>
         </div>

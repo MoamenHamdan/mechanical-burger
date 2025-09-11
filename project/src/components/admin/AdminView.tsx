@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Settings, BarChart3, ChefHat, Clock, CheckCircle, User, Wrench, FolderPlus, Sliders, Lock, Shield, X, Trash2, Phone } from 'lucide-react';
+import logo from '../../images /logo.png';
 import { Burger, Order, Category, CustomizationOption } from '../../types';
 import { BurgerManagement } from './BurgerManagement';
 import { CategoryManagement } from './CategoryManagement';
@@ -29,6 +30,106 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [advancedAuth, setAdvancedAuth] = useState(false);
   const [advancedPassword, setAdvancedPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const knownPendingIdsRef = useRef<Set<string>>(new Set());
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const prevStatusesRef = useRef<Map<string, Order['status']>>(new Map());
+
+  // Ensure audio context is resumed after any user interaction (to bypass autoplay restrictions)
+  React.useEffect(() => {
+    const resumeAudio = () => {
+      try {
+        if (!audioCtxRef.current) {
+          audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const ctx = audioCtxRef.current;
+        if (ctx && ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+      } catch {}
+    };
+    window.addEventListener('click', resumeAudio);
+    window.addEventListener('touchstart', resumeAudio, { passive: true } as any);
+    return () => {
+      window.removeEventListener('click', resumeAudio);
+      window.removeEventListener('touchstart', resumeAudio as any);
+    };
+  }, []);
+
+  // Play a short notification tone when a new PENDING order arrives (kitchen tab)
+  React.useEffect(() => {
+    if (activeTab !== 'kitchen') return;
+    const currentPendingIds = new Set(orders.filter(o => o.status === 'pending').map(o => o.id));
+    let hasNewPending = false;
+    currentPendingIds.forEach(id => {
+      if (!knownPendingIdsRef.current.has(id)) {
+        hasNewPending = true;
+      }
+    });
+    knownPendingIdsRef.current = currentPendingIds;
+    if (!hasNewPending) return;
+
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      if (ctx.state === 'suspended') {
+        // Will be resumed on next interaction
+        return;
+      }
+      const duration = 0.3;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1200, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + duration);
+    } catch {}
+  }, [orders, activeTab]);
+
+  // Play tones on status transitions: preparing (assembly), ready, completed (finish)
+  React.useEffect(() => {
+    if (activeTab !== 'kitchen') return;
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      // Inspect changes
+      orders.forEach(o => {
+        const prev = prevStatusesRef.current.get(o.id);
+        if (prev && prev !== o.status) {
+          // Transition detected
+          const play = (freq: number, duration = 0.25) => {
+            if (!ctx || ctx.state === 'suspended') return;
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.connect(gain).connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + duration);
+          };
+          if (o.status === 'preparing') play(900); // start assembly
+          if (o.status === 'ready') play(600);     // ready
+          if (o.status === 'completed') play(440); // finished
+        }
+        // update snapshot
+        prevStatusesRef.current.set(o.id, o.status);
+      });
+    } catch {}
+  }, [orders, activeTab]);
 
   React.useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -114,13 +215,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex justify-center items-center gap-4 mb-4">
-            <Settings size={48} className="text-red-400" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text text-transparent">
+            <img src={logo} alt="Logo" className="h-12 w-12 rounded-md border border-orange-500" />
+            <h1 className="text-5xl font-bold text-orange-400">
               ADMIN CONTROL PANEL
             </h1>
-            <GearAnimation size="lg" className="text-red-400" />
+            <GearAnimation size="lg" className="text-orange-400" />
           </div>
-          <p className="text-xl text-gray-300">Master Control Interface</p>
+          <p className="text-xl text-orange-300">Master Control Interface</p>
         </div>
 
         {/* Tab Navigation */}
@@ -547,7 +648,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             categories={categories}
           />
         ) : activeTab === 'analytics' && advancedAuth ? (
-          <OrderAnalytics orders={orders} />
+          <OrderAnalytics orders={orders} categories={categories} />
         ) : isAdvancedFeature(activeTab) ? (
           <div className="text-center py-20">
             <Lock size={64} className="text-yellow-400 mx-auto mb-4" />

@@ -1,31 +1,113 @@
-import React from 'react';
-import { TrendingUp, DollarSign, Clock, Users } from 'lucide-react';
-import { Order } from '../../types';
+import React, { useMemo, useState } from 'react';
+import { TrendingUp, DollarSign, Clock, Users, Trophy, Tag } from 'lucide-react';
+import { Order, Category } from '../../types';
 import { MechanicalCard } from '../ui/MechanicalCard';
-import { useLanguage } from '../../hooks/useLanguage';
 
 interface OrderAnalyticsProps {
   orders: Order[];
+  categories: Category[];
 }
 
-export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
-  const { t } = useLanguage();
-  
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
-  const completedOrders = orders.filter(order => order.status === 'completed').length;
-  const averageWaitTime = orders.length > 0 
-    ? orders.reduce((sum, order) => sum + order.estimatedTime, 0) / orders.length 
-    : 0;
+export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders, categories }) => {
+  // const { t } = useLanguage();
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
-  const recentOrders = orders
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+  const getSafeTime = (input: any): number => {
+    try {
+      const d = new Date(input);
+      const t = d.getTime();
+      return Number.isFinite(t) ? t : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      const ts = getSafeTime(o.timestamp);
+      if (startDate) {
+        const s = getSafeTime(startDate + 'T00:00:00');
+        if (ts < s) return false;
+      }
+      if (endDate) {
+        const e = getSafeTime(endDate + 'T23:59:59');
+        if (ts > e) return false;
+      }
+      return true;
+    });
+  }, [orders, startDate, endDate]);
+  
+  const totalRevenue = filteredOrders.reduce((sum, order) => sum + (Number.isFinite(order.totalAmount) ? order.totalAmount : 0), 0);
+  const averageOrderValue = filteredOrders.length > 0 ? totalRevenue / filteredOrders.length : 0;
+  const completedOrders = filteredOrders.filter(order => order.status === 'completed').length;
+  const averageWaitTimeRaw = filteredOrders.length > 0 
+    ? filteredOrders.reduce((sum, order) => sum + (Number.isFinite(order.estimatedTime) ? order.estimatedTime : 0), 0) / filteredOrders.length 
+    : 0;
+  const averageWaitTime = Number.isFinite(averageWaitTimeRaw) ? averageWaitTimeRaw : 0;
+
+  const recentOrders = filteredOrders
+    .slice()
+    .sort((a, b) => getSafeTime(b.timestamp) - getSafeTime(a.timestamp))
     .slice(0, 10);
+
+  // Top sellers (items)
+  const topItems = useMemo(() => {
+    const map = new Map<string, { name: string; quantity: number; revenue: number }>();
+    for (const order of filteredOrders) {
+      for (const item of order.items) {
+        const id = item.burger.id;
+        const entry = map.get(id) || { name: item.burger.name, quantity: 0, revenue: 0 };
+        entry.quantity += item.quantity;
+        entry.revenue += item.totalPrice;
+        map.set(id, entry);
+      }
+    }
+    return Array.from(map.entries())
+      .map(([id, v]) => ({ id, ...v }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+  }, [filteredOrders]);
+
+  // Top categories
+  const categoryIdToName = useMemo(() => {
+    const m = new Map<string, string>();
+    categories.forEach(c => m.set(c.id, c.name));
+    return m;
+  }, [categories]);
+
+  const topCategories = useMemo(() => {
+    const map = new Map<string, { name: string; quantity: number; revenue: number }>();
+    for (const order of filteredOrders) {
+      for (const item of order.items) {
+        const catId = item.burger.categoryId;
+        const name = categoryIdToName.get(catId) || 'Uncategorized';
+        const entry = map.get(catId) || { name, quantity: 0, revenue: 0 };
+        entry.quantity += item.quantity;
+        entry.revenue += item.totalPrice;
+        map.set(catId, entry);
+      }
+    }
+    return Array.from(map.entries())
+      .map(([id, v]) => ({ id, ...v }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+  }, [filteredOrders, categoryIdToName]);
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <h2 className="text-2xl font-bold text-white">ANALYTICS DASHBOARD</h2>
+        <div className="flex items-end gap-3">
+          <div>
+            <label className="block text-xs text-gray-400 mb-1">FROM</label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white" />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-400 mb-1">TO</label>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white" />
+          </div>
+        </div>
       </div>
       
       {/* Stats Grid */}
@@ -98,7 +180,7 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
                       </span>
                     </td>
                     <td className="py-4 text-gray-400 text-sm">
-                      {new Date(order.timestamp).toLocaleTimeString()}
+                      {(() => { const d = new Date(order.timestamp); return Number.isFinite(d.getTime()) ? d.toLocaleTimeString() : '-'; })()}
                     </td>
                   </tr>
                 ))}
@@ -113,6 +195,71 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders }) => {
           )}
         </div>
       </MechanicalCard>
+
+      {/* Top Sellers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MechanicalCard hover={false}>
+          <div className="p-6">
+            <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2"><Trophy className="text-orange-400" /> TOP ITEMS</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-3 text-gray-400 font-semibold">ITEM</th>
+                    <th className="text-left py-3 text-gray-400 font-semibold">QTY</th>
+                    <th className="text-left py-3 text-gray-400 font-semibold">REVENUE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topItems.map(row => (
+                    <tr key={row.id} className="border-b border-gray-700 hover:bg-gray-800/50">
+                      <td className="py-3 text-white font-medium">{row.name}</td>
+                      <td className="py-3 text-gray-300">{row.quantity}</td>
+                      <td className="py-3 text-orange-400 font-bold">${row.revenue.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  {topItems.length === 0 && (
+                    <tr>
+                      <td className="py-4 text-gray-500" colSpan={3}>No data</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </MechanicalCard>
+
+        <MechanicalCard hover={false}>
+          <div className="p-6">
+            <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2"><Tag className="text-orange-400" /> TOP CATEGORIES</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-3 text-gray-400 font-semibold">CATEGORY</th>
+                    <th className="text-left py-3 text-gray-400 font-semibold">QTY</th>
+                    <th className="text-left py-3 text-gray-400 font-semibold">REVENUE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topCategories.map(row => (
+                    <tr key={row.id} className="border-b border-gray-700 hover:bg-gray-800/50">
+                      <td className="py-3 text-white font-medium">{row.name}</td>
+                      <td className="py-3 text-gray-300">{row.quantity}</td>
+                      <td className="py-3 text-orange-400 font-bold">${row.revenue.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                  {topCategories.length === 0 && (
+                    <tr>
+                      <td className="py-4 text-gray-500" colSpan={3}>No data</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </MechanicalCard>
+      </div>
     </div>
   );
 };

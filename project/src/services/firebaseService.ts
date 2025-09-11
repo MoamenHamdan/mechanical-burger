@@ -13,7 +13,8 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { db, storage, auth } from '../config/firebase';
+import { signInAnonymously } from 'firebase/auth';
 import { Burger, Category, CustomizationOption, Order } from '../types';
 
 // Security: Input validation and sanitization
@@ -352,6 +353,14 @@ export const ordersService = {
 export const imageService = {
   async uploadImage(file: File, path: string): Promise<string> {
     try {
+      // Ensure we're authenticated (anonymous) to satisfy Storage rules requiring auth
+      try {
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
+      } catch (e) {
+        // ignore auth errors; storage may allow unauthenticated depending on rules
+      }
       // Security: Validate file type and size
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
       const maxSize = 5 * 1024 * 1024; // 5MB
