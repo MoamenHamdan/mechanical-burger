@@ -180,15 +180,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onViewChange }) => 
                 </div>
               </div>
               
-              <div className="bg-gray-700 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold text-white mb-2">Global Key</h3>
-                <p className="text-sm text-gray-300">
-                  Global key: <span className="text-orange-400 font-mono">MOamenHamdan</span>
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Use this key + your new password to change passwords
-                </p>
-              </div>
+              {/* Global key info removed for security */}
             </div>
             
             <div className="flex gap-3 mt-6">

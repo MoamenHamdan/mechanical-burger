@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { Settings, BarChart3, ChefHat, Clock, CheckCircle, User, Wrench, FolderPlus, Sliders, Lock, Shield, X, Trash2, Phone } from 'lucide-react';
+import { Settings, List, ChefHat, Clock, CheckCircle, User, Wrench, FolderPlus, Sliders, Lock, Shield, X, Trash2, Phone } from 'lucide-react';
 import logo from '../../images /logo.png';
 import { Burger, Order, Category, CustomizationOption } from '../../types';
 import { BurgerManagement } from './BurgerManagement';
 import { CategoryManagement } from './CategoryManagement';
 import { CustomizationManagement } from './CustomizationManagement';
-import { OrderAnalytics } from './OrderAnalytics';
+// import { OrderAnalytics } from './OrderAnalytics';
 import { MechanicalCard } from '../ui/MechanicalCard';
 import { MechanicalButton } from '../ui/MechanicalButton';
 import { GearAnimation } from '../ui/GearAnimation';
@@ -24,8 +24,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
   customizations,
   orders,
 }) => {
-  const [activeTab, setActiveTab] = useState<'kitchen' | 'burgers' | 'categories' | 'customizations' | 'analytics'>('kitchen');
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<'kitchen' | 'burgers' | 'categories' | 'customizations' | 'lastOrders'>('kitchen');
+  // const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [advancedAuth, setAdvancedAuth] = useState(false);
   const [advancedPassword, setAdvancedPassword] = useState('');
@@ -131,10 +131,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
     } catch {}
   }, [orders, activeTab]);
 
-  React.useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // Clock removed per requirements
 
   React.useEffect(() => {
     // Check if advanced admin is already authenticated
@@ -176,9 +173,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const preparingOrders = orders.filter(order => order.status === 'preparing');
   const readyOrders = orders.filter(order => order.status === 'ready');
 
-  const formatTimeElapsed = (orderTime: Date) => {
-    const elapsed = Math.floor((currentTime.getTime() - orderTime.getTime()) / 1000 / 60);
-    return elapsed;
+  const formatTime = (d: Date) => {
+    const dt = new Date(d);
+    return Number.isFinite(dt.getTime()) ? dt.toLocaleString() : '-';
   };
 
   const handleOrderStatusChange = async (orderId: string, status: Order['status']) => {
@@ -279,15 +276,15 @@ export const AdminView: React.FC<AdminViewProps> = ({
             </button>
             
             <button
-              onClick={() => setActiveTab('analytics')}
+              onClick={() => setActiveTab('lastOrders')}
               className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-all duration-300 ${
-                activeTab === 'analytics'
+                activeTab === 'lastOrders'
                   ? 'bg-blue-600 text-white shadow-blue-500/30'
                   : 'text-gray-300 hover:text-white'
               }`}
             >
-              <BarChart3 size={20} />
-              <span>Analytics</span>
+              <List size={20} />
+              <span>Last Orders</span>
               {!advancedAuth && <Lock size={16} className="text-yellow-400" />}
             </button>
           </div>
@@ -412,8 +409,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           </div>
                           <div className="text-right">
                             <div className="text-sm text-gray-400">#{order.id}</div>
-                            <div className="text-sm text-orange-400">
-                              {formatTimeElapsed(order.timestamp)} min ago
+                            <div className="text-sm text-gray-400">
+                              {formatTime(order.timestamp)}
                             </div>
                           </div>
                         </div>
@@ -505,9 +502,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                           </div>
                           <div className="text-right">
                             <div className="text-sm text-gray-400">#{order.id}</div>
-                            <div className="text-sm text-orange-400">
-                              {formatTimeElapsed(order.timestamp)} min ago
-                            </div>
+                            <div className="text-sm text-gray-400">{formatTime(order.timestamp)}</div>
                           </div>
                         </div>
                         
@@ -647,8 +642,50 @@ export const AdminView: React.FC<AdminViewProps> = ({
             customizations={customizations}
             categories={categories}
           />
-        ) : activeTab === 'analytics' && advancedAuth ? (
-          <OrderAnalytics orders={orders} categories={categories} />
+        ) : activeTab === 'lastOrders' && advancedAuth ? (
+          <div className="space-y-6">
+            <MechanicalCard hover={false}>
+              <div className="p-6">
+                <div className="mb-4 p-3 bg-blue-600/10 border border-blue-500/30 rounded text-blue-300 text-sm">
+                  This page lists recently completed or removed orders. Click an order to view details.
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-600">
+                        <th className="text-left py-3 text-gray-400 font-semibold">ORDER ID</th>
+                        <th className="text-left py-3 text-gray-400 font-semibold">CUSTOMER</th>
+                        <th className="text-left py-3 text-gray-400 font-semibold">PHONE</th>
+                        <th className="text-left py-3 text-gray-400 font-semibold">TOTAL</th>
+                        <th className="text-left py-3 text-gray-400 font-semibold">STATUS</th>
+                        <th className="text-left py-3 text-gray-400 font-semibold">TIME</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders
+                        .filter(o => o.status === 'completed')
+                        .slice(0, 50)
+                        .map((order) => (
+                          <tr key={order.id} className="border-b border-gray-700 hover:bg-gray-800/50 cursor-pointer" onClick={() => alert(`#${order.id} details page coming soon`)}>
+                            <td className="py-3 text-blue-400 font-mono">#{order.id}</td>
+                            <td className="py-3 text-white">{order.customerName}</td>
+                            <td className="py-3 text-gray-300">{order.phoneNumber}</td>
+                            <td className="py-3 text-orange-400 font-bold">${order.totalAmount.toFixed(2)}</td>
+                            <td className="py-3"><span className="px-2 py-1 rounded bg-green-600 text-white text-xs font-bold">COMPLETED</span></td>
+                            <td className="py-3 text-gray-400 text-sm">{formatTime(order.timestamp)}</td>
+                          </tr>
+                        ))}
+                      {orders.filter(o => o.status === 'completed').length === 0 && (
+                        <tr>
+                          <td className="py-6 text-center text-gray-500" colSpan={6}>No finished orders yet</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </MechanicalCard>
+          </div>
         ) : isAdvancedFeature(activeTab) ? (
           <div className="text-center py-20">
             <Lock size={64} className="text-yellow-400 mx-auto mb-4" />

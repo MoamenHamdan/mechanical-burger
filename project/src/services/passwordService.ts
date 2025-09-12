@@ -1,7 +1,8 @@
 // Password Management Service
 // This service handles dynamic password changes using a global key + user key system
 
-const GLOBAL_KEY = 'MOamenHamdan';
+// Read global key from env; fall back to a strong default only for development
+const GLOBAL_KEY = import.meta.env.VITE_GLOBAL_KEY || 'MOAMENHAMDAN!@#$%^&*()';
 
 export interface PasswordChangeRequest {
   globalKey: string;

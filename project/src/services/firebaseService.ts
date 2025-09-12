@@ -275,11 +275,51 @@ export const ordersService = {
       const querySnapshot = await getDocs(
         query(collection(db, 'orders'), orderBy('timestamp', 'desc'))
       );
-      return querySnapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id,
-        timestamp: doc.data().timestamp?.toDate() || new Date()
-      })) as Order[];
+      return querySnapshot.docs.map(doc => {
+        const data: any = doc.data();
+        const items = Array.isArray(data.items) ? data.items : [];
+        const mappedItems = items.map((it: any) => {
+          // Support both legacy full-burger and trimmed persisted item
+          if (it && it.burger && it.burger.id) {
+            return it; // already in expected shape
+          }
+          const burgerId = it.burgerId || (it.burger && it.burger.id) || 'unknown';
+          const burgerName = it.burgerName || (it.burger && it.burger.name) || 'Unknown';
+          const unitPrice = typeof it.unitPrice === 'number' ? it.unitPrice : (typeof it.price === 'number' ? it.price : 0);
+          const categoryId = it.categoryId || '';
+          return {
+            burger: {
+              id: burgerId,
+              name: burgerName,
+              price: unitPrice,
+              image: '',
+              ingredients: [],
+              categoryId,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            customizations: Array.isArray(it.customizations) ? it.customizations.map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              type: c.type,
+              price: c.price,
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              categoryId: c.categoryId
+            })) : [],
+            quantity: typeof it.quantity === 'number' ? it.quantity : 1,
+            totalPrice: typeof it.totalPrice === 'number' ? it.totalPrice : (unitPrice * (typeof it.quantity === 'number' ? it.quantity : 1)),
+            comments: it.comments
+          };
+        });
+        return {
+          ...data,
+          id: doc.id,
+          items: mappedItems,
+          timestamp: data.timestamp?.toDate() || new Date()
+        } as Order;
+      });
     } catch (error) {
       console.error('Error fetching orders:', error);
       throw new Error('Failed to fetch orders');
@@ -291,11 +331,21 @@ export const ordersService = {
       // Ensure we do not persist a client-provided id field
       const { id: _omit, ...orderWithoutId } = order as unknown as Order & { id?: string };
       const sanitizedOrder = {
-        ...orderWithoutId,
         customerName: sanitizeInput(orderWithoutId.customerName),
+        phoneNumber: sanitizeInput(orderWithoutId.phoneNumber),
+        totalAmount: orderWithoutId.totalAmount,
+        status: orderWithoutId.status,
+        estimatedTime: orderWithoutId.estimatedTime,
+        orderType: orderWithoutId.orderType,
         comments: orderWithoutId.comments ? sanitizeInput(orderWithoutId.comments) : '',
         items: orderWithoutId.items.map(item => ({
-          ...item,
+          burgerId: item.burger.id,
+          burgerName: item.burger.name,
+          unitPrice: item.burger.price,
+          categoryId: item.burger.categoryId,
+          customizations: item.customizations.map(c => ({ id: c.id, name: c.name, type: c.type, price: c.price, categoryId: c.categoryId })),
+          quantity: item.quantity,
+          totalPrice: item.totalPrice,
           comments: item.comments ? sanitizeInput(item.comments) : ''
         })),
         timestamp: Timestamp.fromDate(orderWithoutId.timestamp)
@@ -331,11 +381,48 @@ export const ordersService = {
     return onSnapshot(
       query(collection(db, 'orders'), orderBy('timestamp', 'desc')),
       (snapshot) => {
-        const orders = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-          timestamp: doc.data().timestamp?.toDate() || new Date()
-        })) as Order[];
+        const orders = snapshot.docs.map(doc => {
+          const data: any = doc.data();
+          const items = Array.isArray(data.items) ? data.items : [];
+          const mappedItems = items.map((it: any) => {
+            if (it && it.burger && it.burger.id) return it;
+            const burgerId = it.burgerId || (it.burger && it.burger.id) || 'unknown';
+            const burgerName = it.burgerName || (it.burger && it.burger.name) || 'Unknown';
+            const unitPrice = typeof it.unitPrice === 'number' ? it.unitPrice : (typeof it.price === 'number' ? it.price : 0);
+            const categoryId = it.categoryId || '';
+            return {
+              burger: {
+                id: burgerId,
+                name: burgerName,
+                price: unitPrice,
+                image: '',
+                ingredients: [],
+                categoryId,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              },
+              customizations: Array.isArray(it.customizations) ? it.customizations.map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                type: c.type,
+                price: c.price,
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                categoryId: c.categoryId
+              })) : [],
+              quantity: typeof it.quantity === 'number' ? it.quantity : 1,
+              totalPrice: typeof it.totalPrice === 'number' ? it.totalPrice : (unitPrice * (typeof it.quantity === 'number' ? it.quantity : 1)),
+              comments: it.comments
+            };
+          });
+          return {
+            ...data,
+            id: doc.id,
+            items: mappedItems,
+            timestamp: data.timestamp?.toDate() || new Date()
+          } as Order;
+        });
         callback(orders);
       },
       (error) => {

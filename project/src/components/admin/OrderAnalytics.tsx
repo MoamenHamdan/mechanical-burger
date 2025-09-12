@@ -55,11 +55,16 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders, categori
   const topItems = useMemo(() => {
     const map = new Map<string, { name: string; quantity: number; revenue: number }>();
     for (const order of filteredOrders) {
-      for (const item of order.items) {
+      const items = Array.isArray(order.items) ? order.items : [];
+      for (const item of items) {
+        if (!item || !item.burger) continue;
         const id = item.burger.id;
-        const entry = map.get(id) || { name: item.burger.name, quantity: 0, revenue: 0 };
-        entry.quantity += item.quantity;
-        entry.revenue += item.totalPrice;
+        const name = item.burger.name || 'Unknown';
+        const entry = map.get(id) || { name, quantity: 0, revenue: 0 };
+        const qty = typeof item.quantity === 'number' && Number.isFinite(item.quantity) ? item.quantity : 0;
+        const revenueToAdd = typeof item.totalPrice === 'number' && Number.isFinite(item.totalPrice) ? item.totalPrice : 0;
+        entry.quantity += qty;
+        entry.revenue += revenueToAdd;
         map.set(id, entry);
       }
     }
@@ -79,12 +84,16 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders, categori
   const topCategories = useMemo(() => {
     const map = new Map<string, { name: string; quantity: number; revenue: number }>();
     for (const order of filteredOrders) {
-      for (const item of order.items) {
-        const catId = item.burger.categoryId;
-        const name = categoryIdToName.get(catId) || 'Uncategorized';
-        const entry = map.get(catId) || { name, quantity: 0, revenue: 0 };
-        entry.quantity += item.quantity;
-        entry.revenue += item.totalPrice;
+      const items = Array.isArray(order.items) ? order.items : [];
+      for (const item of items) {
+        if (!item || !item.burger) continue;
+        const catId = item.burger.categoryId || 'unknown';
+        const displayName = categoryIdToName.get(catId) || 'Uncategorized';
+        const entry = map.get(catId) || { name: displayName, quantity: 0, revenue: 0 };
+        const qty = typeof item.quantity === 'number' && Number.isFinite(item.quantity) ? item.quantity : 0;
+        const revenueToAdd = typeof item.totalPrice === 'number' && Number.isFinite(item.totalPrice) ? item.totalPrice : 0;
+        entry.quantity += qty;
+        entry.revenue += revenueToAdd;
         map.set(catId, entry);
       }
     }
@@ -167,8 +176,8 @@ export const OrderAnalytics: React.FC<OrderAnalyticsProps> = ({ orders, categori
                   <tr key={order.id} className="border-b border-gray-700 hover:bg-gray-800/50">
                     <td className="py-4 text-blue-400 font-mono">#{order.id}</td>
                     <td className="py-4 text-white font-medium">{order.customerName}</td>
-                    <td className="py-4 text-gray-300">{order.items.length} item(s)</td>
-                    <td className="py-4 text-orange-400 font-bold">${order.totalAmount.toFixed(2)}</td>
+                    <td className="py-4 text-gray-300">{Array.isArray(order.items) ? order.items.length : 0} item(s)</td>
+                    <td className="py-4 text-orange-400 font-bold">${(typeof order.totalAmount === 'number' && Number.isFinite(order.totalAmount) ? order.totalAmount : 0).toFixed(2)}</td>
                     <td className="py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                         order.status === 'completed' ? 'bg-green-600 text-white' :
