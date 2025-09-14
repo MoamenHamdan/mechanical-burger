@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Burger, Category, CustomizationOption, Order } from '../types';
 import { burgersService, categoriesService, customizationService, ordersService } from '../services/firebaseService';
+import { deletedOrdersService } from '../services/deletedOrdersService';
 
 // Cache for faster loading
 const CACHE_KEY = 'mechanical_burger_cache';
@@ -37,6 +38,7 @@ export const useFirebaseData = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [customizations, setCustomizations] = useState<CustomizationOption[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [deletedOrders, setDeletedOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,6 +97,10 @@ export const useFirebaseData = () => {
         const unsubscribeOrders = ordersService.subscribe((data) => setOrders(data));
         unsubscribers.push(unsubscribeOrders);
 
+        // Deleted orders subscription (if collection exists)
+        const unsubscribeDeleted = deletedOrdersService.subscribe((data) => setDeletedOrders(data));
+        unsubscribers.push(unsubscribeDeleted);
+
         setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -115,7 +121,8 @@ export const useFirebaseData = () => {
     categories,
     customizations,
     orders,
+    deletedOrders,
     loading,
     error
-  }), [burgers, categories, customizations, orders, loading, error]);
+  }), [burgers, categories, customizations, orders, deletedOrders, loading, error]);
 };
