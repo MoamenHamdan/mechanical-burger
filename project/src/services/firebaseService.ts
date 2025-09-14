@@ -16,6 +16,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { db, storage, auth } from '../config/firebase';
 import { signInAnonymously } from 'firebase/auth';
 import { Burger, Category, CustomizationOption, Order } from '../types';
+export { deletedOrdersService } from './deletedOrdersService';
 
 // Security: Input validation and sanitization
 const sanitizeInput = (input: string): string => {

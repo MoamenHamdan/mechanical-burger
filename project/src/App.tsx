@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ViewMode } from './types';
+import { ViewMode, OrderItem } from './types';
 import { Header } from './components/Header';
 import { CustomerView } from './components/customer/CustomerView';
 import { AdminView } from './components/admin/AdminView';
@@ -10,7 +10,9 @@ import { useFirebaseData } from './hooks/useFirebaseData';
 function App() {
   const [currentView, setCurrentView] = useState<ViewMode>('customer');
   const [adminAuthed, setAdminAuthed] = useState<boolean>(false);
-  const { burgers, categories, customizations, orders, loading, error } = useFirebaseData();
+  const { burgers, categories, customizations, orders, deletedOrders, loading, error } = useFirebaseData();
+  const [cartItems, setCartItems] = useState<OrderItem[]>([]);
+  const [showCart, setShowCart] = useState(false);
   
   // Secret URL-based admin access: e.g., https://site/#admin-<token>
   useEffect(() => {
@@ -35,6 +37,8 @@ function App() {
     window.addEventListener('hashchange', checkHash);
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
+
+  const handleCartToggle = () => setShowCart(prev => !prev);
 
   if (loading) {
     return <LoadingSpinner message="Initializing Mechanical Systems..." />;
@@ -70,6 +74,10 @@ function App() {
             burgers={burgers}
             categories={categories}
             customizations={customizations}
+            cartItems={cartItems}
+            onUpdateCart={setCartItems}
+            showCart={showCart}
+            onCartToggle={handleCartToggle}
             onOrderComplete={handleOrderComplete}
           />
         );
@@ -85,6 +93,7 @@ function App() {
             categories={categories}
             customizations={customizations}
             orders={orders}
+            deletedOrders={deletedOrders}
           />
         );
     }
@@ -92,7 +101,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <Header currentView={currentView} onViewChange={setCurrentView} />
+      <Header 
+        currentView={currentView} 
+        onViewChange={setCurrentView}
+        cartItems={cartItems}
+        onCartClick={handleCartToggle}
+      />
       {renderCurrentView()}
     </div>
   );
